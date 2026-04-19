@@ -2,8 +2,11 @@ package com.caycanh.caycanh_backend.security;
 
 import com.caycanh.caycanh_backend.entity.User;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +20,7 @@ import java.util.UUID;
 @Component
 public class JwtUtil {
 
+    private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
     private final SecretKey key;
     private final long expirationMinutes;
 
@@ -50,7 +54,11 @@ public class JwtUtil {
         try {
             getAllClaims(token);
             return true;
+        } catch (ExpiredJwtException ex) {
+            logger.warn("Token expired: {}", ex.getMessage());
+            return false;
         } catch (Exception ex) {
+            logger.warn("Token invalid: {}", ex.getMessage());
             return false;
         }
     }

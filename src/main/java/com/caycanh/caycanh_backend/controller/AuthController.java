@@ -1,8 +1,11 @@
 package com.caycanh.caycanh_backend.controller;
 
+import com.caycanh.caycanh_backend.dto.MessageResponse;
 import com.caycanh.caycanh_backend.dto.auth.AuthResponse;
 import com.caycanh.caycanh_backend.dto.auth.LoginRequest;
 import com.caycanh.caycanh_backend.dto.auth.RegisterRequest;
+import com.caycanh.caycanh_backend.dto.auth.ResendOtpRequest;
+import com.caycanh.caycanh_backend.dto.auth.VerifyEmailRequest;
 import com.caycanh.caycanh_backend.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -22,8 +25,18 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest req) {
+    public ResponseEntity<MessageResponse> register(@Valid @RequestBody RegisterRequest req) {
         return ResponseEntity.ok(authService.register(req));
+    }
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<AuthResponse> verifyEmail(@Valid @RequestBody VerifyEmailRequest req) {
+        return ResponseEntity.ok(authService.verifyEmail(req));
+    }
+
+    @PostMapping("/resend-otp")
+    public ResponseEntity<MessageResponse> resendOtp(@Valid @RequestBody ResendOtpRequest req) {
+        return ResponseEntity.ok(authService.resendOtp(req));
     }
 
     @PostMapping("/login")
@@ -31,4 +44,3 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(req));
     }
 }
-

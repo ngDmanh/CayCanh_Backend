@@ -54,7 +54,7 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         UUID userId = jwtUtil.getUserId(token);
-        Optional<User> userOpt = userRepository.findById(Objects.requireNonNull(userId));
+        Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty()) {
             filterChain.doFilter(request, response);
             return;
@@ -68,7 +68,6 @@ public class JwtFilter extends OncePerRequestFilter {
         );
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);
-
         filterChain.doFilter(request, response);
     }
 }

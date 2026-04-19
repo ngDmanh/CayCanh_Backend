@@ -12,6 +12,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableMethodSecurity
@@ -26,11 +27,14 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/hello",
+                                "/error",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs",
                                 "/v3/api-docs/**"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/plants/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/plants/categories/**").permitAll()
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "STAFF")
                         .anyRequest().authenticated()
                 )

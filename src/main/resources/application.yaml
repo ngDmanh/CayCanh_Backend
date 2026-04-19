@@ -1,8 +1,8 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/QLCayCanh
-    username: postgres
-    password: 123456
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:123456}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -14,9 +14,21 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 jwt:
-  # TỐI THIỂU 256-bit cho HS256. Nên đổi thành biến môi trường khi deploy.
-  secret: "CHANGE_ME_TO_A_LONG_RANDOM_SECRET_AT_LEAST_32_CHARS"
-  expiration-minutes: 120
+  secret: ${JWT_SECRET:CHANGE_ME_TO_A_LONG_RANDOM_SECRET_AT_LEAST_32_CHARS}
+  expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
+
 server:
   port: 8080
