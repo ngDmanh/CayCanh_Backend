@@ -1,8 +1,8 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/QLCayCanh
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:123456}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -17,8 +17,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -26,8 +26,18 @@ spring:
           starttls:
             enable: true
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 30MB
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
+
 jwt:
-  secret: ${JWT_SECRET:CHANGE_ME_TO_A_LONG_RANDOM_SECRET_AT_LEAST_32_CHARS}
+  secret: ${JWT_SECRET}
   expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
 
 server:

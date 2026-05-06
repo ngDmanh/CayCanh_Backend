@@ -1,7 +1,9 @@
 package com.caycanh.caycanh_backend.controller;
 
+import com.caycanh.caycanh_backend.dto.image.UploadImageResponse;
 import com.caycanh.caycanh_backend.dto.plant.*;
 import com.caycanh.caycanh_backend.entity.Plant;
+import com.caycanh.caycanh_backend.service.CloudinaryService;
 import com.caycanh.caycanh_backend.service.PlantCategoryService;
 import com.caycanh.caycanh_backend.service.PlantService;
 import jakarta.validation.Valid;
@@ -11,7 +13,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,10 +24,12 @@ public class PlantController {
 
     private final PlantService plantService;
     private final PlantCategoryService categoryService;
+    private final CloudinaryService cloudinaryService;
 
-    public PlantController(PlantService plantService, PlantCategoryService categoryService) {
+    public PlantController(PlantService plantService, PlantCategoryService categoryService, CloudinaryService cloudinaryService) {
         this.plantService = plantService;
         this.categoryService = categoryService;
+        this.cloudinaryService = cloudinaryService;
     }
 
     // ── Public: Category ───────────────────────────────────────
@@ -55,6 +61,14 @@ public class PlantController {
     @GetMapping("/api/plants/{id}")
     public ResponseEntity<PlantResponse> getPlantById(@PathVariable UUID id) {
         return ResponseEntity.ok(plantService.getById(id));
+    }
+
+    // ── Admin: Image Upload ────────────────────────────────────
+
+    @PostMapping("/api/admin/upload-image")
+    public ResponseEntity<UploadImageResponse> uploadImage(@RequestParam("file") MultipartFile file) {
+        String url = cloudinaryService.uploadImage(file);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new UploadImageResponse(url));
     }
 
     // ── Admin: Category ────────────────────────────────────────
