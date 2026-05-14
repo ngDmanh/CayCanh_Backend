@@ -29,7 +29,7 @@ public class Payment {
     @Column(nullable = false, precision = 14, scale = 0)
     private BigDecimal amount;
 
-    // Hiện tại chỉ có 'cash' (COD)
+    // Phương thức thanh toán: cash (COD) hoặc bank_transfer (chuyển khoản)
     @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     @Builder.Default
@@ -45,6 +45,6 @@ public class Payment {
     private OffsetDateTime paidAt;
 
     // ── Enums ──────────────────────────────────────────────────
-    public enum PaymentMethod { cash }
+    public enum PaymentMethod { cash, bank_transfer }
     public enum PaymentStatus { pending, success, failed, refunded }
 }

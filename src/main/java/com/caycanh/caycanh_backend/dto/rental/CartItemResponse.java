@@ -1,4 +1,4 @@
-package com.caycanh.caycanh_backend.dto.cart;
+package com.caycanh.caycanh_backend.dto.rental;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -15,6 +15,6 @@ public record CartItemResponse(
         Integer quantity,
         Integer duration,
         String durationUnit,
-        BigDecimal unitPrice,
-        BigDecimal subtotal
+        BigDecimal unitPrice,    // giá/ngày, giá/tuần hoặc giá/tháng tùy unit
+        BigDecimal subtotal      // tổng dòng = unitPrice × duration × quantity
 ) {}

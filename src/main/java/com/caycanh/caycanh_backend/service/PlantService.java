@@ -46,7 +46,9 @@ public class PlantService {
                 .description(req.description())
                 .listingType(req.listingType())
                 .priceSale(req.priceSale())
-                .priceRentPerMonth(req.priceRentPerMonth())
+                .pricePerDay(req.pricePerDay())
+                .pricePerWeek(req.pricePerWeek())
+                .pricePerMonth(req.pricePerMonth())
                 .stockQuantity(req.stockQuantity())
                 .rentAvailableQty(req.rentAvailableQty())
                 .status(req.status() != null ? req.status() : Plant.PlantStatus.active)
@@ -78,7 +80,9 @@ public class PlantService {
         plant.setDescription(req.description());
         plant.setListingType(req.listingType());
         plant.setPriceSale(req.priceSale());
-        plant.setPriceRentPerMonth(req.priceRentPerMonth());
+        plant.setPricePerDay(req.pricePerDay());
+        plant.setPricePerWeek(req.pricePerWeek());
+        plant.setPricePerMonth(req.pricePerMonth());
         plant.setStockQuantity(req.stockQuantity());
         plant.setRentAvailableQty(req.rentAvailableQty());
         if (req.status() != null) plant.setStatus(req.status());
@@ -107,8 +111,8 @@ public class PlantService {
         if (req.listingType() == Plant.ListingType.sale || req.listingType() == Plant.ListingType.both) {
             if (req.priceSale() == null) throw new IllegalArgumentException("priceSale là bắt buộc với loại bán");
         }
-        if (req.listingType() == Plant.ListingType.rent || req.listingType() == Plant.ListingType.both) {
-            if (req.priceRentPerMonth() == null) throw new IllegalArgumentException("priceRentPerMonth là bắt buộc với loại thuê");
+        if (req.pricePerDay() == null || req.pricePerWeek() == null || req.pricePerMonth() == null) {
+            throw new IllegalArgumentException("Cần đủ 3 giá (ngày/tuần/tháng) cho cây cho thuê");
         }
     }
 
@@ -136,7 +140,9 @@ public class PlantService {
                 p.getDescription(),
                 p.getListingType().name(),
                 p.getPriceSale(),
-                p.getPriceRentPerMonth(),
+                p.getPricePerDay(),
+                p.getPricePerWeek(),
+                p.getPricePerMonth(),
                 p.getStockQuantity(),
                 p.getRentAvailableQty(),
                 p.getStatus().name(),

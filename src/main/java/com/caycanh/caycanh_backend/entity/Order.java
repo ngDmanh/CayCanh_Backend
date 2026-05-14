@@ -44,8 +44,36 @@ public class Order {
     @Column(name = "shipping_address", columnDefinition = "TEXT")
     private String shippingAddress;
 
+    @Column(name = "recipient_name", nullable = false, length = 100)
+    private String recipientName;
+
+    @Column(name = "recipient_phone", nullable = false, length = 20)
+    private String recipientPhone;
+
+    @Column(name = "recipient_email", nullable = false, length = 150)
+    private String recipientEmail;
+
     @Column(columnDefinition = "TEXT")
     private String note;
+
+    @Column(name = "deposit_required", precision = 14, scale = 0, nullable = false)
+    @Builder.Default
+    private BigDecimal depositRequired = BigDecimal.ZERO;
+
+    @Column(name = "deposit_confirmed_at")
+    private OffsetDateTime depositConfirmedAt;
+
+    @Column(name = "deposit_confirmed_by")
+    private UUID depositConfirmedBy;
+
+    @Column(name = "payment_deadline")
+    private OffsetDateTime paymentDeadline;
+
+    @Column(name = "failure_reason", columnDefinition = "TEXT")
+    private String failureReason;
+
+    @Column(name = "failed_at")
+    private OffsetDateTime failedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
@@ -79,6 +107,15 @@ public class Order {
 
     // ── Enums ──────────────────────────────────────────────────
     public enum OrderType    { sale, rental }
-    public enum OrderStatus  { pending, confirmed, completed, cancelled }
+    public enum OrderStatus {
+        pending,
+        awaiting_deposit,
+        awaiting_payment,
+        confirmed,
+        delivering,
+        completed,
+        cancelled,
+        delivery_failed
+    }
     public enum PaymentStatus { unpaid, paid }
 }

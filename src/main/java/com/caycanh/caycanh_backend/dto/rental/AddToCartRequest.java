@@ -1,4 +1,4 @@
-package com.caycanh.caycanh_backend.dto.cart;
+package com.caycanh.caycanh_backend.dto.rental;
 
 import com.caycanh.caycanh_backend.entity.CartItem;
 import com.caycanh.caycanh_backend.entity.Plant;

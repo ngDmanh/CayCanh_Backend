@@ -2,58 +2,53 @@ package com.caycanh.caycanh_backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
+/**
+ * Một dòng trong giỏ hàng.
+ *
+ * THAY ĐỔI v2:
+ * - Bỏ duration_months
+ * - Thêm duration + duration_unit (day/week/month)
+ */
 @Entity
-@Table(
-    name = "cart_items",
-    uniqueConstraints = @UniqueConstraint(
-        name = "uq_cart_plant_type",
-        columnNames = {"cart_id", "plant_id", "item_type"}
-    )
-)
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
-@Builder
+@Table(name = "cart_items",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"cart_id", "plant_id", "item_type"}))
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class CartItem {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(columnDefinition = "uuid")
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cart_id", nullable = false)
     private Cart cart;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "plant_id", nullable = false)
     private Plant plant;
 
-    // 'sale' hoặc 'rent' — người dùng chọn khi thêm vào giỏ
-    @Column(name = "item_type", nullable = false, length = 10)
     @Enumerated(EnumType.STRING)
+    @Column(name = "item_type", nullable = false, length = 10)
     private ItemType itemType;
 
     @Column(nullable = false)
-    @Builder.Default
-    private Integer quantity = 1;
+    private Integer quantity;
 
-    // Chỉ có giá trị khi itemType = rent
-    // CHECK constraint ở DB đảm bảo NOT NULL khi rent
-    @Column(name = "duration_months")
-    private Integer durationMonths;
+    // ── Thông tin thuê (chỉ áp dụng khi itemType = rent) ───────
+    /** Số ngày/tuần/tháng khách muốn thuê — null nếu là sale */
+    @Column
+    private Integer duration;
 
-    @Column(name = "added_at", nullable = false, updatable = false)
-    private OffsetDateTime addedAt;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "duration_unit", length = 10)
+    private Plant.RentDurationUnit durationUnit;
 
-    // ── Lifecycle ──────────────────────────────────────────────
-    @PrePersist
-    protected void onCreate() {
-        this.addedAt = OffsetDateTime.now();
-    }
-
-    // ── Enum ───────────────────────────────────────────────────
     public enum ItemType { sale, rent }
 }

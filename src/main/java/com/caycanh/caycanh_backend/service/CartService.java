@@ -32,9 +32,6 @@ public class CartService {
 
     // ── Public API ─────────────────────────────────────────────
 
-    /**
-     * Lấy giỏ của user hiện tại — tự tạo nếu chưa có.
-     */
     @Transactional
     public CartResponse getMyCart(User user) {
         Cart cart = getOrCreateCart(user);
@@ -42,18 +39,16 @@ public class CartService {
     }
 
     /**
-     * Thêm cây vào giỏ. Nếu đã có cây + loại trùng → tăng số lượng,
-     * không tạo dòng mới (nhờ UNIQUE constraint ở DB).
+     * Thêm cây vào giỏ. Nếu đã có cây + loại trùng → tăng số lượng.
+     * Với rent: cũng cập nhật duration/unit nếu khách đổi.
      */
     @Transactional
     public CartResponse addItem(User user, AddToCartRequest req) {
         Cart cart = getOrCreateCart(user);
         Plant plant = findPlantOrThrow(req.plantId());
 
-        // Validate input theo nghiệp vụ
         validateAddRequest(req, plant);
 
-        // Nếu đã có item trùng (cùng plant + itemType) → cộng quantity
         var existing = cartItemRepository.findByCartIdAndPlantIdAndItemType(
                 cart.getId(), req.plantId(), req.itemType()
         );
@@ -61,9 +56,10 @@ public class CartService {
         if (existing.isPresent()) {
             CartItem item = existing.get();
             item.setQuantity(item.getQuantity() + req.quantity());
-            // Cho phép đổi durationMonths nếu user thêm lần nữa với số tháng khác
-            if (req.itemType() == CartItem.ItemType.rent && req.durationMonths() != null) {
-                item.setDurationMonths(req.durationMonths());
+            // Với rent: cho phép đổi duration/unit khi thêm lần nữa
+            if (req.itemType() == CartItem.ItemType.rent) {
+                if (req.duration() != null) item.setDuration(req.duration());
+                if (req.durationUnit() != null) item.setDurationUnit(req.durationUnit());
             }
             cartItemRepository.save(item);
         } else {
@@ -72,19 +68,18 @@ public class CartService {
                     .plant(plant)
                     .itemType(req.itemType())
                     .quantity(req.quantity())
-                    .durationMonths(req.itemType() == CartItem.ItemType.rent
-                            ? req.durationMonths() : null)
+                    .duration(req.itemType() == CartItem.ItemType.rent ? req.duration() : null)
+                    .durationUnit(req.itemType() == CartItem.ItemType.rent ? req.durationUnit() : null)
                     .build();
             cart.getItems().add(newItem);
             cartItemRepository.save(newItem);
         }
 
-        // Trigger DB tự cập nhật updated_at của cart
         return toResponse(cart);
     }
 
     /**
-     * Cập nhật số lượng / số tháng của 1 item.
+     * Cập nhật số lượng / duration của 1 item.
      */
     @Transactional
     public CartResponse updateItem(User user, UUID itemId, UpdateCartItemRequest req) {
@@ -93,19 +88,19 @@ public class CartService {
 
         item.setQuantity(req.quantity());
         if (item.getItemType() == CartItem.ItemType.rent) {
-            if (req.durationMonths() == null) {
-                throw new IllegalArgumentException("Số tháng thuê là bắt buộc với cây thuê");
+            if (req.duration() == null || req.durationUnit() == null) {
+                throw new IllegalArgumentException(
+                        "Số ngày/tuần/tháng và đơn vị là bắt buộc với cây thuê"
+                );
             }
-            item.setDurationMonths(req.durationMonths());
+            item.setDuration(req.duration());
+            item.setDurationUnit(req.durationUnit());
         }
         cartItemRepository.save(item);
 
         return toResponse(cart);
     }
 
-    /**
-     * Xóa 1 item khỏi giỏ.
-     */
     @Transactional
     public CartResponse removeItem(User user, UUID itemId) {
         Cart cart = getOrCreateCart(user);
@@ -115,9 +110,6 @@ public class CartService {
         return toResponse(cart);
     }
 
-    /**
-     * Xóa toàn bộ giỏ — dùng khi đặt hàng xong hoặc user muốn clear.
-     */
     @Transactional
     public CartResponse clearCart(User user) {
         Cart cart = getOrCreateCart(user);
@@ -128,9 +120,6 @@ public class CartService {
 
     // ── Helpers ────────────────────────────────────────────────
 
-    /**
-     * Tìm hoặc tạo giỏ cho user. Mỗi user chỉ có 1 giỏ (UNIQUE ở DB).
-     */
     private Cart getOrCreateCart(User user) {
         return cartRepository.findByUserId(user.getId())
                 .orElseGet(() -> {
@@ -155,17 +144,14 @@ public class CartService {
      * Validate logic nghiệp vụ khi thêm cây vào giỏ.
      */
     private void validateAddRequest(AddToCartRequest req, Plant plant) {
-        // Cây phải đang active
         if (plant.getStatus() != Plant.PlantStatus.active) {
             throw new IllegalArgumentException("Cây này hiện không bán/cho thuê");
         }
 
-        // Loại item phải khớp với listing_type của cây
         if (req.itemType() == CartItem.ItemType.sale) {
             if (plant.getListingType() == Plant.ListingType.rent) {
                 throw new IllegalArgumentException("Cây này chỉ cho thuê, không bán");
             }
-            // Kiểm tra tồn kho
             if (plant.getStockQuantity() == null || plant.getStockQuantity() < req.quantity()) {
                 throw new IllegalArgumentException("Không đủ hàng — chỉ còn "
                         + (plant.getStockQuantity() == null ? 0 : plant.getStockQuantity()));
@@ -178,18 +164,22 @@ public class CartService {
                 throw new IllegalArgumentException("Không đủ cây cho thuê — chỉ còn "
                         + (plant.getRentAvailableQty() == null ? 0 : plant.getRentAvailableQty()));
             }
-            // Thuê bắt buộc có số tháng
-            if (req.durationMonths() == null || req.durationMonths() < 1) {
-                throw new IllegalArgumentException("Số tháng thuê phải >= 1");
+            // Thuê bắt buộc có duration và đơn vị
+            if (req.duration() == null || req.duration() < 1) {
+                throw new IllegalArgumentException("Số ngày/tuần/tháng thuê phải >= 1");
+            }
+            if (req.durationUnit() == null) {
+                throw new IllegalArgumentException("Cần chọn đơn vị thuê: day/week/month");
+            }
+            // Cây phải có giá tương ứng với đơn vị
+            if (plant.getRentPrice(req.durationUnit()) == null) {
+                throw new IllegalArgumentException(
+                        "Cây này không có giá cho khung " + req.durationUnit()
+                );
             }
         }
     }
 
-    /**
-     * Convert Cart entity → CartResponse, tự tính giá theo giá HIỆN TẠI của cây.
-     * Quan trọng: không lưu giá trong cart_items — luôn lấy từ plants để khách
-     * thấy đúng giá hiện tại nếu admin vừa cập nhật.
-     */
     private CartResponse toResponse(Cart cart) {
         List<CartItemResponse> items = cart.getItems().stream()
                 .map(this::toItemResponse)
@@ -210,26 +200,28 @@ public class CartService {
         Plant plant = item.getPlant();
         BigDecimal unitPrice;
         BigDecimal subtotal;
+        String durationUnitStr = null;
 
         if (item.getItemType() == CartItem.ItemType.sale) {
             unitPrice = plant.getPriceSale();
             subtotal = unitPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
         } else {
-            unitPrice = plant.getPriceRentPerMonth();
-            // Thuê: giá/tháng × số tháng × số lượng
+            // Lấy giá theo đơn vị khách chọn (ngày/tuần/tháng)
+            unitPrice = plant.getRentPrice(item.getDurationUnit());
+            durationUnitStr = item.getDurationUnit().name();
+            // Tổng = giá đơn vị × số duration × số lượng
             subtotal = unitPrice
-                    .multiply(BigDecimal.valueOf(item.getDurationMonths()))
+                    .multiply(BigDecimal.valueOf(item.getDuration()))
                     .multiply(BigDecimal.valueOf(item.getQuantity()));
         }
 
-        // Lấy ảnh đại diện (is_primary = true), fallback ảnh đầu tiên
         String primaryImageUrl = plant.getImages() == null || plant.getImages().isEmpty()
                 ? null
                 : plant.getImages().stream()
-                    .filter(img -> Boolean.TRUE.equals(img.getIsPrimary()))
-                    .findFirst()
-                    .orElse(plant.getImages().get(0))
-                    .getImageUrl();
+                .filter(img -> Boolean.TRUE.equals(img.getIsPrimary()))
+                .findFirst()
+                .orElse(plant.getImages().get(0))
+                .getImageUrl();
 
         return new CartItemResponse(
                 item.getId(),
@@ -238,7 +230,8 @@ public class CartService {
                 primaryImageUrl,
                 item.getItemType().name(),
                 item.getQuantity(),
-                item.getDurationMonths(),
+                item.getDuration(),
+                durationUnitStr,
                 unitPrice,
                 subtotal
         );
