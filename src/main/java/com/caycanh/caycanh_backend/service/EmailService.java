@@ -17,6 +17,7 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
+    /** Gửi OTP xác thực email khi đăng ký tài khoản */
     public void sendOtp(String to, String otp) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);
@@ -24,10 +25,29 @@ public class EmailService {
         message.setSubject("Xác thực email - Cây Cảnh");
         message.setText(
                 "Xin chào!\n\n" +
-                "Mã OTP xác thực email của bạn là:\n\n" +
-                "  " + otp + "\n\n" +
-                "Mã có hiệu lực trong 5 phút. Vui lòng không chia sẻ mã này cho bất kỳ ai.\n\n" +
-                "Trân trọng,\nĐội ngũ Cây Cảnh"
+                        "Mã OTP xác thực email của bạn là:\n\n" +
+                        "  " + otp + "\n\n" +
+                        "Mã có hiệu lực trong 5 phút. Vui lòng không chia sẻ mã này cho bất kỳ ai.\n\n" +
+                        "Trân trọng,\nĐội ngũ Cây Cảnh"
+        );
+        mailSender.send(message);
+    }
+
+    /** Gửi OTP đặt lại mật khẩu khi khách quên mật khẩu */
+    public void sendPasswordResetOtp(String to, String otp) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(to);
+        message.setSubject("Đặt lại mật khẩu - Cây Cảnh");
+        message.setText(
+                "Xin chào!\n\n" +
+                        "Bạn vừa yêu cầu đặt lại mật khẩu cho tài khoản Cây Cảnh.\n\n" +
+                        "Mã OTP đặt lại mật khẩu của bạn là:\n\n" +
+                        "  " + otp + "\n\n" +
+                        "Mã có hiệu lực trong 5 phút. Vui lòng không chia sẻ mã này cho bất kỳ ai.\n\n" +
+                        "Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này " +
+                        "và kiểm tra lại bảo mật tài khoản của bạn.\n\n" +
+                        "Trân trọng,\nĐội ngũ Cây Cảnh"
         );
         mailSender.send(message);
     }

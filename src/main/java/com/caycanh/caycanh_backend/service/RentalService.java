@@ -20,13 +20,16 @@ public class RentalService {
     private final RentalRepository rentalRepository;
     private final OrderRepository orderRepository;
     private final PlantRepository plantRepository;
+    private final NotificationService notificationService;
 
     public RentalService(RentalRepository rentalRepository,
                          OrderRepository orderRepository,
-                         PlantRepository plantRepository) {
+                         PlantRepository plantRepository,
+                         NotificationService notificationService) {
         this.rentalRepository = rentalRepository;
         this.orderRepository = orderRepository;
         this.plantRepository = plantRepository;
+        this.notificationService = notificationService;
     }
 
     // ── CUSTOMER: xem rental của mình ─────────────────────────
@@ -77,6 +80,7 @@ public class RentalService {
         rental.setStatus(Rental.RentalStatus.active);
 
         rentalRepository.save(rental);
+        notificationService.notifyRentalActive(rental);
         return toResponse(rental, true);
     }
 

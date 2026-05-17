@@ -23,15 +23,18 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final RentalRepository rentalRepository;
     private final PaymentRepository paymentRepository;
+    private final NotificationService notificationService;
 
     public OrderService(OrderRepository orderRepository,
                         CartRepository cartRepository,
                         RentalRepository rentalRepository,
-                        PaymentRepository paymentRepository) {
+                        PaymentRepository paymentRepository,
+                        NotificationService notificationService) {
         this.orderRepository = orderRepository;
         this.cartRepository = cartRepository;
         this.rentalRepository = rentalRepository;
         this.paymentRepository = paymentRepository;
+        this.notificationService = notificationService;
     }
 
     // ════════════════════════════════════════════════════════════
@@ -73,6 +76,10 @@ public class OrderService {
                 .toList();
 
         String message = buildCheckoutMessage(createdOrders);
+        for (Order order : createdOrders) {
+            notificationService.notifyOrderCreated(user, order);
+            notificationService.notifyAdminNewOrder(order);
+        }
         return new CheckoutResponse(responses, message);
     }
 
@@ -331,6 +338,7 @@ public class OrderService {
         }
 
         orderRepository.save(order);
+        notificationService.notifyOrderConfirmed(order);
         return toOrderResponse(order, true);
     }
 
@@ -349,6 +357,7 @@ public class OrderService {
 
         order.setStatus(Order.OrderStatus.confirmed);
         orderRepository.save(order);
+        notificationService.notifyOrderConfirmed(order);
         return toOrderResponse(order, true);
     }
 
@@ -366,6 +375,7 @@ public class OrderService {
 
         order.setStatus(Order.OrderStatus.delivering);
         orderRepository.save(order);
+        notificationService.notifyOrderDelivering(order);
         return toOrderResponse(order, true);
     }
 
@@ -390,6 +400,7 @@ public class OrderService {
 
         order.setStatus(Order.OrderStatus.completed);
         orderRepository.save(order);
+        notificationService.notifyOrderCompleted(order);
         return toOrderResponse(order, true);
     }
 
@@ -411,6 +422,7 @@ public class OrderService {
         order.setFailureReason(reason);
         order.setFailedAt(OffsetDateTime.now());
         orderRepository.save(order);
+        notificationService.notifyOrderFailed(order);
         return toOrderResponse(order, true);
     }
 

@@ -35,4 +35,7 @@ public interface RentalRepository extends JpaRepository<Rental, UUID> {
     @Query("UPDATE Rental r SET r.status = 'overdue' " +
            "WHERE r.status = 'active' AND r.endDate < :today")
     int markOverdue(@Param("today") LocalDate today);
+
+    @Query("SELECT r FROM Rental r WHERE r.status = 'active' AND r.endDate = :date")
+    List<Rental> findExpiringOn(@Param("date") LocalDate date);
 }
