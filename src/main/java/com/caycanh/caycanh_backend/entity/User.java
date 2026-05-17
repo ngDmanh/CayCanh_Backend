@@ -47,6 +47,13 @@ public class User implements UserDetails {
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
+    @Column(name = "failed_delivery_count", nullable = false)
+    @Builder.Default
+    private Integer failedDeliveryCount = 0;
+
+    @Column(name = "last_failed_delivery_at")
+    private OffsetDateTime lastFailedDeliveryAt;
+
     // ── Quan hệ ────────────────────────────────────────────────
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Cart cart;
@@ -71,7 +78,7 @@ public class User implements UserDetails {
 
     // ── Enum role ──────────────────────────────────────────────
     public enum Role {
-        customer, admin, staff
+        customer, admin
     }
 
     // ── Spring Security UserDetails ────────────────────────────
