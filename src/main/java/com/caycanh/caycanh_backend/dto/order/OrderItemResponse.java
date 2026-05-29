@@ -23,6 +23,7 @@ public record OrderItemResponse(
             String startDate,
             String endDate,
             Integer duration,
+            String durationUnit,
             String status,
             String actualReturnDate
     ) {}

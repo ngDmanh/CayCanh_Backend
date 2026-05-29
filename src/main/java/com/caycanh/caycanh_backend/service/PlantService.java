@@ -109,10 +109,14 @@ public class PlantService {
 
     private void validatePrices(PlantRequest req) {
         if (req.listingType() == Plant.ListingType.sale || req.listingType() == Plant.ListingType.both) {
-            if (req.priceSale() == null) throw new IllegalArgumentException("priceSale là bắt buộc với loại bán");
+            if (req.priceSale() == null)
+                throw new IllegalArgumentException("priceSale là bắt buộc với loại bán");
         }
-        if (req.pricePerDay() == null || req.pricePerWeek() == null || req.pricePerMonth() == null) {
-            throw new IllegalArgumentException("Cần đủ 3 giá (ngày/tuần/tháng) cho cây cho thuê");
+        // CHỈ bắt buộc 3 giá thuê khi cây có cho thuê
+        if (req.listingType() == Plant.ListingType.rent || req.listingType() == Plant.ListingType.both) {
+            if (req.pricePerDay() == null || req.pricePerWeek() == null || req.pricePerMonth() == null) {
+                throw new IllegalArgumentException("Cần đủ 3 giá (ngày/tuần/tháng) cho cây cho thuê");
+            }
         }
     }
 

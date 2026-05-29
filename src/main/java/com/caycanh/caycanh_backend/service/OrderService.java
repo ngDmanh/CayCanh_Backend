@@ -272,8 +272,8 @@ public class OrderService {
 
         // Chỉ cho hủy khi đơn chưa được giao
         boolean cancellable = switch (order.getStatus()) {
-            case pending, awaiting_deposit, awaiting_payment, confirmed -> true;
-            case delivering, completed, cancelled, delivery_failed -> false;
+            case pending, awaiting_deposit, awaiting_payment -> true;
+            case confirmed, delivering, completed, cancelled, delivery_failed -> false;
         };
         if (!cancellable) {
             throw new IllegalArgumentException(
@@ -282,6 +282,11 @@ public class OrderService {
 
         order.setStatus(Order.OrderStatus.cancelled);
         orderRepository.save(order);
+
+        // Gửi notification cho khách + admin
+        notificationService.notifyOrderCancelled(order);
+        notificationService.notifyAdminCustomerCancelled(order);
+
         return toOrderResponse(order, false);
     }
 
@@ -368,6 +373,12 @@ public class OrderService {
     public OrderResponse startDelivery(UUID orderId) {
         Order order = findOrderOrThrow(orderId);
 
+        if (order.getOrderType() == Order.OrderType.rental) {
+            throw new IllegalArgumentException(
+                    "Đơn thuê không dùng luồng giao hàng. " +
+                            "Vào tab Cho thuê để xác nhận đã giao cây.");
+        }
+
         if (order.getStatus() != Order.OrderStatus.confirmed) {
             throw new IllegalArgumentException(
                     "Chỉ giao đơn đã confirmed. Hiện tại: " + order.getStatus());
@@ -387,15 +398,19 @@ public class OrderService {
     public OrderResponse completeOrder(UUID orderId) {
         Order order = findOrderOrThrow(orderId);
 
+        if (order.getOrderType() == Order.OrderType.rental) {
+            throw new IllegalArgumentException(
+                    "Đơn thuê tự completed khi admin xác nhận đã giao cây ở tab Cho thuê.");
+        }
+
         if (order.getStatus() != Order.OrderStatus.delivering) {
             throw new IllegalArgumentException(
                     "Chỉ hoàn thành đơn đang giao (delivering). Hiện tại: " + order.getStatus());
         }
 
-        // Với đơn COD/đơn lớn: phải thu nốt tiền mới completed
         if (order.getPaymentStatus() != Order.PaymentStatus.paid) {
             throw new IllegalArgumentException(
-                    "Phải xác nhận đã thu đủ tiền (gọi /payment) trước khi hoàn thành đơn");
+                    "Phải xác nhận đã thu đủ tiền trước khi hoàn thành đơn");
         }
 
         order.setStatus(Order.OrderStatus.completed);
@@ -519,6 +534,7 @@ public class OrderService {
                     r.getStartDate() == null ? null : r.getStartDate().toString(),
                     r.getEndDate() == null ? null : r.getEndDate().toString(),
                     r.getDuration(),
+                    r.getDurationUnit().name(),
                     r.getStatus().name(),
                     r.getActualReturnDate() == null ? null : r.getActualReturnDate().toString()
             );

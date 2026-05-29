@@ -1,5 +1,6 @@
 package com.caycanh.caycanh_backend.dto.auth;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record AuthResponse(
@@ -11,7 +12,8 @@ public record AuthResponse(
             String fullName,
             String email,
             String phone,
-            String role
+            String role,
+            OffsetDateTime lastProfileUpdatedAt
     ) {}
 }
 

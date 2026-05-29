@@ -1,21 +1,16 @@
 package com.caycanh.caycanh_backend.service;
 
 import com.caycanh.caycanh_backend.dto.MessageResponse;
-import com.caycanh.caycanh_backend.dto.auth.AuthResponse;
-import com.caycanh.caycanh_backend.dto.auth.LoginRequest;
-import com.caycanh.caycanh_backend.dto.auth.RegisterRequest;
-import com.caycanh.caycanh_backend.dto.auth.ResendOtpRequest;
-import com.caycanh.caycanh_backend.dto.auth.VerifyEmailRequest;
+import com.caycanh.caycanh_backend.dto.auth.*;
 import com.caycanh.caycanh_backend.entity.User;
 import com.caycanh.caycanh_backend.repository.UserRepository;
 import com.caycanh.caycanh_backend.security.JwtUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.caycanh.caycanh_backend.dto.auth.ForgotPasswordRequest;
-import com.caycanh.caycanh_backend.dto.auth.VerifyResetOtpRequest;
-import com.caycanh.caycanh_backend.dto.auth.VerifyResetOtpResponse;
-import com.caycanh.caycanh_backend.dto.auth.ResetPasswordRequest;
+import java.time.temporal.ChronoUnit;
+
+import java.time.OffsetDateTime;
 
 @Service
 public class AuthService {
@@ -193,6 +188,56 @@ public class AuthService {
                 "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập với mật khẩu mới."
         );
     }
+    // ── CẬP NHẬT PROFILE ──────────────────────────────────────
+
+    /**
+     * Khách tự cập nhật profile — chỉ đổi được fullName + phone.
+     * Email không thay đổi được (khóa định danh + đã verify OTP).
+     * Mật khẩu phải đổi qua flow forgot-password riêng.
+     */
+
+    @Transactional
+    public AuthResponse.UserMeResponse updateMyProfile(User principal, UpdateProfileRequest req) {
+        User user = userRepository.findById(principal.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản"));
+
+        // ── KIỂM TRA RATE LIMIT: 1 ngày 1 lần ───────────────
+        OffsetDateTime lastUpdate = user.getLastProfileUpdatedAt();
+        if (lastUpdate != null) {
+            OffsetDateTime now = OffsetDateTime.now();
+            long hoursSinceLastUpdate = ChronoUnit.HOURS.between(lastUpdate, now);
+            if (hoursSinceLastUpdate < 24) {
+                long hoursLeft = 24 - hoursSinceLastUpdate;
+                throw new IllegalArgumentException(
+                        "Bạn chỉ có thể cập nhật thông tin 1 lần mỗi 24 giờ. " +
+                                "Vui lòng thử lại sau " + hoursLeft + " giờ."
+                );
+            }
+        }
+
+        // Update các field
+        user.setFullName(req.fullName().trim());
+
+        String phone = req.phone();
+        if (phone != null && phone.isBlank()) {
+            phone = null;
+        }
+        user.setPhone(phone);
+
+        // Đánh dấu thời điểm update để giới hạn 24h
+        user.setLastProfileUpdatedAt(OffsetDateTime.now());
+
+        User saved = userRepository.save(user);
+
+        return new AuthResponse.UserMeResponse(
+                saved.getId(),
+                saved.getFullName(),
+                saved.getEmail(),
+                saved.getPhone(),
+                saved.getRole().name(),
+                saved.getLastProfileUpdatedAt()
+        );
+    }
 
     private static AuthResponse toAuthResponse(User user, String token) {
         return new AuthResponse(
@@ -202,7 +247,8 @@ public class AuthService {
                         user.getFullName(),
                         user.getEmail(),
                         user.getPhone(),
-                        user.getRole().name()
+                        user.getRole().name(),
+                        user.getLastProfileUpdatedAt()    // ← thêm
                 )
         );
     }

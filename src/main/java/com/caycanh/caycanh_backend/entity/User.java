@@ -54,6 +54,9 @@ public class User implements UserDetails {
     @Column(name = "last_failed_delivery_at")
     private OffsetDateTime lastFailedDeliveryAt;
 
+    @Column(name = "last_profile_updated_at")
+    private OffsetDateTime lastProfileUpdatedAt;
+
     // ── Quan hệ ────────────────────────────────────────────────
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Cart cart;

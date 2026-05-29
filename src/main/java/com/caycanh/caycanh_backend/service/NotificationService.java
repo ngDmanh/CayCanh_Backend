@@ -125,6 +125,14 @@ public class NotificationService {
                Notification.NotificationType.order, "orders", order.getId());
     }
 
+    /** Khách tự hủy đơn */
+    public void notifyOrderCancelled(Order order) {
+        create(order.getUser(),
+                "Đã hủy đơn hàng",
+                "Đơn #" + shortId(order.getId()) + " đã được hủy thành công theo yêu cầu của bạn.",
+                Notification.NotificationType.order, "orders", order.getId());
+    }
+
     /** Admin đã giao cây thuê (rental chuyển active) */
     public void notifyRentalActive(Rental rental) {
         create(rental.getUser(),
@@ -201,6 +209,18 @@ public class NotificationService {
                "Có " + count + " đơn tự hủy",
                "Có " + count + " đơn hàng đã bị hủy tự động do khách không thanh toán trong 24h.",
                Notification.NotificationType.order, null, null);
+    }
+
+    /** Khách vừa hủy 1 đơn */
+    public void notifyAdminCustomerCancelled(Order order) {
+        User admin = getAdmin();
+        if (admin == null) return;
+
+        create(admin,
+                "Khách đã hủy đơn",
+                "Khách " + order.getUser().getFullName() +
+                        " đã hủy đơn #" + shortId(order.getId()) + " — tổng " + order.getTotalAmount() + "₫",
+                Notification.NotificationType.order, "orders", order.getId());
     }
 
     /**

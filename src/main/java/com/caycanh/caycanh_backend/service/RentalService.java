@@ -70,7 +70,7 @@ public class RentalService {
         if (rental.getStatus() != Rental.RentalStatus.pending_delivery) {
             throw new IllegalArgumentException(
                     "Chỉ rental ở trạng thái pending_delivery mới đánh dấu giao được. " +
-                    "Hiện tại: " + rental.getStatus()
+                            "Hiện tại: " + rental.getStatus()
             );
         }
 
@@ -78,8 +78,22 @@ public class RentalService {
         rental.setStartDate(today);
         rental.setEndDate(rental.computeEndDate(today));
         rental.setStatus(Rental.RentalStatus.active);
-
         rentalRepository.save(rental);
+
+        // Tự động đánh dấu order rental là completed
+        Order order = rental.getOrderItem().getOrder();
+        if (order.getOrderType() == Order.OrderType.rental
+                && order.getStatus() != Order.OrderStatus.completed
+                && order.getStatus() != Order.OrderStatus.cancelled) {
+            // Đảm bảo đã thanh toán
+            if (order.getPaymentStatus() != Order.PaymentStatus.paid) {
+                order.setPaymentStatus(Order.PaymentStatus.paid);
+            }
+            order.setStatus(Order.OrderStatus.completed);
+            orderRepository.save(order);
+            notificationService.notifyOrderCompleted(order);
+        }
+
         notificationService.notifyRentalActive(rental);
         return toResponse(rental, true);
     }
@@ -99,7 +113,19 @@ public class RentalService {
                 && rental.getStatus() != Rental.RentalStatus.overdue) {
             throw new IllegalArgumentException(
                     "Chỉ thu hồi được rental đang active hoặc overdue. " +
-                    "Hiện tại: " + rental.getStatus()
+                            "Hiện tại: " + rental.getStatus()
+            );
+        }
+
+// Active nhưng chưa hết hạn → không cho thu hồi
+        if (rental.getStatus() == Rental.RentalStatus.active
+                && rental.getEndDate() != null
+                && rental.getEndDate().isAfter(java.time.LocalDate.now())) {
+            long daysLeft = java.time.temporal.ChronoUnit.DAYS.between(
+                    java.time.LocalDate.now(), rental.getEndDate()
+            );
+            throw new IllegalArgumentException(
+                    "Chưa hết hạn thuê. Còn " + daysLeft + " ngày nữa mới được thu hồi."
             );
         }
 
