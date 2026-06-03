@@ -3,7 +3,7 @@
 Máy chủ ứng dụng cho hệ thống quản lý và kinh doanh cây cảnh (mua + cho thuê).
 Cung cấp REST API cho ứng dụng di động Android.
 
-> 📱 Ứng dụng di động (Android): xem repo riêng — (https://github.com/ngDmanh/CayCanh_Mobile)
+> 📱 Ứng dụng di động (Android): xem repo riêng — *(dán link repo mobile vào đây)*
 
 ---
 
@@ -161,14 +161,14 @@ Trong dự án Android, cấu hình `BASE_URL` trỏ về máy chủ:
 ## 9. Cấu trúc thư mục (tham khảo)
 
 ```
-src/main/java/com/example/caycanh/
+src/main/java/com/caycanh/caycanh_backend/
 ├── controller/    # Tiếp nhận request (REST API)
 ├── service/       # Xử lý nghiệp vụ
 ├── repository/    # Truy cập cơ sở dữ liệu (JPA)
 ├── entity/        # Các thực thể ánh xạ bảng
 ├── dto/           # Đối tượng truyền dữ liệu
-├── config/        # Cấu hình bảo mật, JWT, Cloudinary...
-└── ...
+├── config/        # Cấu hình chung, scheduler, hằng số, OpenAPI
+└── security/      # JWT (JwtUtil, JwtFilter), cấu hình bảo mật
 ```
 
 ---
