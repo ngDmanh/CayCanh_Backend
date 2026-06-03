@@ -3,7 +3,7 @@
 Máy chủ ứng dụng cho hệ thống quản lý và kinh doanh cây cảnh (mua + cho thuê).
 Cung cấp REST API cho ứng dụng di động Android.
 
-> 📱 Ứng dụng di động (Android): xem repo riêng — *(dán link repo mobile vào đây)*
+> 📱 Ứng dụng di động (Android): xem repo riêng — https://github.com/ngDmanh/CayCanh_Mobile
 
 ---
 
